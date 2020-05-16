@@ -1,0 +1,62 @@
+<!DOCTYPE html>
+    <html lang="en">
+      <head>
+        <Set-Cookie: ACookieAvailableCrossSite; SameSite=None;Secure;>   
+        <meta charset="UTF-8" />
+        <meta name="viewport" content="width=\, initial-scale=1.0" />
+        <meta http-equiv="X-UA-Compatible" content="ie=edge" />
+        <style>
+          p.small { line-height: 1.1;}
+          p.big {line-height: 1.8;}
+          .sansserif {
+            font-family: Arial, Helvetica, sans-serif;
+          }
+          h2 {
+            font-size: 25px;
+            font-family: 'Andale Mono', monospace;
+            color:turquoise;
+            line-height: 1.25;
+            border: 5px solid maroon;
+            padding: 10px;
+          }
+          p {
+            color: #dbdbdb;
+            font-size: 17px;
+            font-family: sans-serif;  
+            line-height: .75;
+          }
+        </style>
+        <title>NHBP CHSDA COVID STATS</title> 
+      </head>
+        <body style="background-color:#242424">
+          <div id="micovid">
+            <h2>TOTAL CASES NHBP CHSDA COUNTIES: <span id = "chsdaconfirmed" style="font-size:35px;color:pink"></span><br>
+           TOTAL DEATHS NHBP CHSDA COUNTIES: <span id = "chsdadeaths" style="font-size:35px;color:pink"></span></h2>
+            <p id="headertext"></p>          
+          </div>
+        <script>
+          (async () => {
+            let n = 1;
+            //const urlFetch = ('http://localhost:5000/LocationArtistry/mi-covid-data/');
+            const urlFetch = ('https://geojsondataserver.firebaseapp.com/LocationArtistry/mi-covid-data/');
+            const fetchData = await fetch(urlFetch);
+            const fetchJSON = await fetchData.json();
+            const namesCHSDA = ["Calhoun","Branch","Kalamazoo","Barry","Allegan","Kent","Ottawa"]; 
+            const findCHSDA = (countyArray) => {
+                let sumCases = 0, sumDeaths = 0;
+                for (record in countyArray) {
+                    console.log(`CountyName: ${countyArray[record].properties.County} sumCases: ${sumCases} sumDeaths: ${sumDeaths}`);
+                    for (county in namesCHSDA){
+                        namesCHSDA[county] == countyArray[record].properties.County ? (sumCases = sumCases + countyArray[record].properties.Cases,
+                        sumDeaths = sumDeaths + countyArray[record].properties.Deaths) : ("");
+                    };
+                    console.log(`CountyName: ${countyArray[record].properties.County} sumCases: ${sumCases} sumDeaths: ${sumDeaths}`);
+                };
+                document.getElementById('chsdaconfirmed').textContent = sumCases;
+                document.getElementById('chsdadeaths').textContent = sumDeaths;
+            };
+            findCHSDA(fetchJSON.features);
+          })();
+        </script> 
+      </body>
+    </html> 

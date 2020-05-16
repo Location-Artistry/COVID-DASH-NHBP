@@ -1,0 +1,32 @@
+{
+  "hosting": {
+    "public": "public",
+    "ignore": [
+      "firebase.json",
+      "**/.*",
+      "**/node_modules/**"
+    ],
+    "rewrites": [
+      {
+        "source": "/LocationArtistry/CovidGeoJSON/**",
+        "function": "api"
+
+      }, {
+        "source": "/LocationArtistry/mi-covid-data/**",
+        "function": "api"
+      }, {
+        "source": "/LocationArtistry/mi-covid-combined/**",
+        "function": "api"
+      }, {
+        "source": "/LocationArtistry/covid-us-totals/**",
+        "function": "api"
+      }, {
+        "source": "/LocationArtistry/mi-daily-report/**",
+        "function": "api"
+      }, {
+          "source":"/LocationArtistry/testCloud/**",
+          "function": "api"
+        }
+    ]
+  }
+}

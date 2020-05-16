@@ -1,0 +1,106 @@
+<!DOCTYPE html>
+<html>
+  <head>
+    <meta charset="utf-8" />
+    <meta
+      name="viewport"
+      content="initial-scale=1,maximum-scale=1,user-scalable=no"
+    />
+<title>COVID CASES MICHIGAN MAP</title>
+    <style>
+      html,
+      body,
+      #viewDiv {
+        padding: 0;
+        margin: 0;
+        height: 100%;
+        width: 100%;
+      }
+    </style>
+    <link
+      rel="stylesheet"
+      href="https://js.arcgis.com/4.14/esri/themes/dark/main.css"
+    />
+    <script src="https://js.arcgis.com/4.14/"></script>
+    <script>
+      require([
+        "esri/Map",
+        "esri/layers/GeoJSONLayer",
+        "esri/views/MapView",
+        "esri/symbols/SimpleFillSymbol",
+        "esri/layers/TileLayer",
+        "esri/widgets/Legend"
+      ], function(Map, GeoJSONLayer, MapView, TileLayer, Legend) {
+        const worldDataUrl = "/LocationArtistry/CovidGeoJSON/";
+        //toggle between local and server data 
+        //const miCountyUrl = "http://localhost:5000/LocationArtistry/mi-covid-combined/";
+        const miCountyUrl = "https://geojsondataserver.firebaseapp.com/LocationArtistry/mi-covid-combined/";
+        const template = {
+          title: "NAME: {LABEL}",
+          "content": [{
+            "type": "fields",
+            "fieldInfos": [
+                {"fieldName": "Confirmed", "label": "CONFIRMED CASES:", "isEditable": true, "tooltip": "", "visible": true, 
+                "format": null, "stringFieldOption": "text-box" },
+                {"fieldName": "Deaths", "label": "DEATHS", "isEditable": true, "tooltip": "", "visible": true, 
+                "format": null, "stringFieldOption": "text-box" }
+                ]
+            }]
+        };
+        //["FIPSCODE", "NAME", "LABEL", "SQMILES", "PENINSULA", "Confirmed", "Deaths", "VER"],
+        var miRenderer = {
+            type: "simple", // autocasts as new SimpleRenderer()
+            field: "Confirmed",
+            symbol: {
+              type: "simple-fill",
+            color: [51, 51, 204, 0.5],
+            style: "solid",
+            outline: {
+                color: [0,0,0, 0.7],
+                width: 2
+                }
+            },
+            visualVariables: [
+                { type: "color", field: "Confirmed", stops: [
+                    { value: 0, color:  [255, 255, 204, 0.85]},
+                    { value: 1, color: [254,204,92,0.85]},
+                    { value: 10, color: [253,141,60,0.85]},
+                    { value: 100, color: [240,59,32,0.85]},
+                    { value: 1000, color: [128,0,38,0.85] },
+                    ]
+                }
+            ]
+        };
+        const miCountyLayer = new GeoJSONLayer({
+          url: miCountyUrl,
+          copyright: "Location Artistry GeoJSON Covid Data: Shapes and Data provided separately by State of Michigan",
+          outFields: ["FIPSCODE", "NAME", "LABEL", "SQMILES", "PENINSULA", "Confirmed", "Deaths", "VER"],
+          popupTemplate: template,
+          renderer: miRenderer //optional
+        });
+
+        var fireflyLayer1 = new TileLayer({
+          url: "https://fly.maptiles.arcgis.com/arcgis/rest/services/World_Imagery_Firefly/MapServer",
+          id: "firefly",
+          opacity: 0.3
+        });
+
+        const map = new Map({
+          basemap: "streets-night-vector",
+          layers: [miCountyLayer]
+        });
+
+        const view = new MapView({
+          container: "viewDiv",
+          center: [-85.5, 44.5],
+          zoom: 5,
+          map: map
+        });
+      });
+    </script>
+  </head>
+  <body>
+  
+    <div id="viewDiv"></div>
+  </body>
+</html>

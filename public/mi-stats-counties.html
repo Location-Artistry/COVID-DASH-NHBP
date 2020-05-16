@@ -1,0 +1,88 @@
+<!DOCTYPE html>
+    <html lang="en">
+      <head>
+        <Set-Cookie: ACookieAvailableCrossSite; SameSite=None;Secure;>   
+        <meta charset="UTF-8" />
+        <meta name="viewport" content="width=\, initial-scale=1.0" />
+        <meta http-equiv="X-UA-Compatible" content="ie=edge" />
+        <style>
+          p.small { line-height: 1.1;}
+          p.big {line-height: 1.8;}
+          .sansserif {
+            font-family: Arial, Helvetica, sans-serif;
+          }
+          h2 {
+            text-indent: -1%;
+            text-align: left;
+            font-size: 20px;
+            font-family: sans-serif;
+            color:#99b1ff;
+            line-height: .75;
+            border: 0px solid #99b1ff;
+            padding: 10px;
+            margin-top: 0px;
+            margin-bottom: 0px;
+          }
+          p {
+            margin-top: 0px;
+            color: #dbdbdb;
+            font-size: 17px;
+            font-family: sans-serif;  
+            line-height: .75;
+          }
+        </style>
+        <title>MICHIGAN COVID COUNTY STATS</title> 
+      </head>
+        <body style="background-color:#242424">
+          <div id="micovid">
+          <h2>Michigan Counties by Highest Confirmed Cases</h2>
+           <p id="headertext"></p>          
+          </div>
+        <script>
+          (async () => {
+            let n = 1;
+            const urlFetch = ('https://geojsondataserver.firebaseapp.com/LocationArtistry/mi-covid-data/');
+            const fetchData = await fetch(urlFetch);
+            const fetchJSON = await fetchData.json();
+            const totalsMI = fetchJSON.features[fetchJSON.features.length - 1].properties;
+            //document.getElementById('miconfirmed').textContent = totalsMI.TotalCases;
+            //document.getElementById('mideaths').textContent = totalsMI.TotalDeaths;
+            //function to sort Michigan Counties by highest number of confirmed cases
+            const sortConfirmMI = () => {
+              let miArray = [], miArray2 = [], placeHolder = {}, x = 1, n = 1;
+              miArray[0] = {"properties": {"County": "NONE", "Cases": 0, "Deaths": 0}};
+              for (record in fetchJSON.features) {
+                fetchJSON.features[record].properties.County != "TOTALS" ? (miArray[x] = fetchJSON.features[record],x++) : ("");
+              };
+              for (i=1;i<miArray.length;i++){
+                for (z=1;z<miArray.length;z++){
+                  if (miArray[z].properties.Cases < miArray[z-1].properties.Cases) {
+                    placeHolder = miArray[z];
+                    miArray[z] = miArray[z-1];
+                    miArray[z-1] = placeHolder;
+                    }
+                };
+              };
+            return miArray;
+          };
+          //function to display list of county cases by highest number confirmed
+          pageDisplay = () => {
+            const confirmSorted = sortConfirmMI();
+            //document.getElementById("headertext").innerText = "Michigan Counties by Highest Confirmed Cases:";
+            let n = 1;
+            for (y = (confirmSorted.length-1); y > 0;y--) {
+              const paraConfirm = document.createElement("P");
+              paraConfirm.innerText = `(${n}) ${confirmSorted[y].properties.County} - Confirmed Cases: ${confirmSorted[y].properties.Cases} - Deaths: ${confirmSorted[y].properties.Deaths}`;
+              document.getElementById("micovid").appendChild(paraConfirm);
+              console.log(`(${n}) County: ${confirmSorted[y].properties.County} Confirmed: ${confirmSorted[y].properties.Cases}`);
+              n++;
+            };
+          };
+      
+          pageDisplay();
+
+          })();
+
+        </script> 
+      </body>
+    </html> 

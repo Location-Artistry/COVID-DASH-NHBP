@@ -1,0 +1,6 @@
+{
+  "projects": {
+    "default": "geojsondataserver",
+    "covid-data-server": "geojsondataserver"
+  }
+}

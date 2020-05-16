@@ -1,0 +1,160 @@
+<!DOCTYPE html>
+    <html lang="en">
+      <head>
+        <Set-Cookie: ACookieAvailableCrossSite; SameSite=None;Secure;>   
+        <meta charset="UTF-8" />
+        <meta name="viewport" content="width=\, initial-scale=1.0" />
+        <meta http-equiv="X-UA-Compatible" content="ie=edge" />
+        <style>
+          p.small { line-height: 1.1;}
+          p.big {line-height: 1.8;}
+          .sansserif {
+            font-family: Arial, Helvetica, sans-serif;
+          }
+          h2 {
+            font-size: 25px;
+            font-family: sans-serif;
+            color:#adadad;
+            line-height: 1.25;
+            border: 2px solid #4f4f4f;
+            padding: 10px;
+          }
+          p {
+            color: #b5b5b5;
+          }
+        </style>
+        <title>US COVID-19 INFO</title> 
+      </head>
+        <body style="background-color:#242424">
+          <div id="uscovid">
+          <h2>US CONFIRMED CASES: <span id = "usconfirmed" style="font-size:35px;color:#d6932f"></span><br>
+           US CONFIRMED DEATHS: <span id = "usdeaths" style="font-size:35px;color:#d6932f"></span></h2>          
+          </div>
+        <script>
+          (async () => {
+            let n = 1;
+            const urlFetch = ('http://localhost:5000/LocationArtistry/covid-us-totals/');
+            const fetchData = await fetch(urlFetch);
+            const fetchJSON = await fetchData.json();
+            const totalsUS = fetchJSON["TOTALS"];
+            console.log(`US Totals: ${totalsUS.Confirmed} Deaths: ${totalsUS.Deaths}`);
+            
+            //function to sort US states by highest number of confirmed cases
+            const sortConfirmUS = () => {
+              let stateArray = [], stateArray2 = [], placeHolder = {}, x = 1, n = 1;
+              stateArray[0] = {"Country": "NONE", "Prov_State": "NONE", "Confirmed": 0, "Deaths": 0, "Recovered": 0, "Updated": ""};
+              for (record in fetchJSON) {
+                fetchJSON[record].Prov_State != "ALL" ? (stateArray[x] = fetchJSON[record],x++) : ("");
+              };
+              for (i=1;i<stateArray.length;i++){
+                for (z=1;z<stateArray.length;z++){
+                  if (stateArray[z].Confirmed < stateArray[z-1].Confirmed) {
+                    placeHolder = stateArray[z];
+                    stateArray[z] = stateArray[z-1];
+                    stateArray[z-1] = placeHolder;
+                    }
+                };
+              };
+            return stateArray;
+          };
+          
+          
+          //function to sort US cases by higest number of Deaths
+          const sortDeathsUS = () => {
+            let stateArray = [], stateArray2 = [], placeHolder = {}, x = 1, n = 1;
+            stateArray[0] = {"Country": "NONE", "Prov_State": "NONE", "Confirmed": 0, "Deaths": 0, "Recovered": 0, "Updated": ""};
+              for (record in fetchJSON) {
+                fetchJSON[record].Prov_State != "ALL" ? (stateArray[x] = fetchJSON[record],x++) : ("");
+              };
+              for (i=1;i<stateArray.length;i++){
+                for (z=1;z<stateArray.length;z++){
+                  if (stateArray[z].Deaths < stateArray[z-1].Deaths) {
+                    placeHolder = stateArray[z];
+                    stateArray[z] = stateArray[z-1];
+                    stateArray[z-1] = placeHolder;
+                    }
+                };
+              };
+            return stateArray;
+          };
+          pageDisplay = () => {
+            const confirmSorted = sortConfirmUS();
+            for (let y = (confirmSorted.length-1); y > (confirmSorted.length - 11);y--) {
+              const paraConfirm = document.createElement("P");
+              paraConfirm.innerText = `${n}: State: ${confirmSorted[y].Prov_State} Confirmed: ${confirmSorted[y].Confirmed}`;
+              document.getElementById("uscovid").appendChild(paraConfirm);
+              console.log(`${n}: State: ${confirmSorted[y].Prov_State} Confirmed: ${confirmSorted[y].Confirmed}`);
+              n++;
+            };
+            const deathsSorted = sortDeathsUS();
+            n = 1;
+            for (let y = (deathsSorted.length-1); y > (deathsSorted.length-11);y--) {
+              console.log(`${n}: State: ${deathsSorted[y].Prov_State} Deaths: ${deathsSorted[y].Deaths}`);
+              n++;
+            };
+            document.getElementById('usconfirmed').textContent = totalsUS.Confirmed;
+            document.getElementById('usdeaths').textContent = totalsUS.Deaths;
+
+            var body = document.getElementsByTagName("body")[0];
+            var tbl = document.createElement("table");
+            var tblBody = document.createElement("tbody");
+            for (var i = 0; i < 10; i++) {
+                // creates a table row
+                var row = document.createElement("tr");
+                for (var j = 0; j < 2; j++) {
+                // Create a <td> element and a text node, make the text
+                // node the contents of the <td>, and put the <td> at
+                // the end of the table row
+                var cell = document.createElement("td");
+                var cellText = document.createTextNode("cell in row "+i+", column "+j);
+                cell.appendChild(cellText);
+                row.appendChild(cell);
+                }
+                // add the row to the end of the table body
+                tblBody.appendChild(row);
+            }
+            // put the <tbody> in the <table>
+            tbl.appendChild(tblBody);
+            // appends <table> into <body>
+            body.appendChild(tbl);
+            // sets the border attribute of tbl to 2;
+            tbl.setAttribute("border", "2");
+          };
+      
+          pageDisplay();
+          generate_table();
+          function generate_table() {
+            // get the reference for the body
+            var body = document.getElementsByTagName("body")[0];
+            // creates a <table> element and a <tbody> element
+            var tbl = document.createElement("table");
+            var tblBody = document.createElement("tbody");
+            // creating all cells
+            for (var i = 0; i < 2; i++) {
+                // creates a table row
+                var row = document.createElement("tr");
+                for (var j = 0; j < 2; j++) {
+                // Create a <td> element and a text node, make the text
+                // node the contents of the <td>, and put the <td> at
+                // the end of the table row
+                var cell = document.createElement("td");
+                var cellText = document.createTextNode("cell in row "+i+", column "+j);
+                cell.appendChild(cellText);
+                row.appendChild(cell);
+                }
+                // add the row to the end of the table body
+                tblBody.appendChild(row);
+            }
+            // put the <tbody> in the <table>
+            tbl.appendChild(tblBody);
+            // appends <table> into <body>
+            body.appendChild(tbl);
+            // sets the border attribute of tbl to 2;
+            tbl.setAttribute("border", "2");
+            }
+
+          })();
+
+        </script> 
+      </body>
+    </html> 

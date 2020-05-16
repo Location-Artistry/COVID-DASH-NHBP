@@ -1,0 +1,111 @@
+<!DOCTYPE html>
+    <html lang="en">
+      <head>
+        <Set-Cookie: ACookieAvailableCrossSite; SameSite=None;Secure;>   
+        <meta charset="UTF-8" />
+        <meta name="viewport" content="width=\, initial-scale=1.0" />
+        <meta http-equiv="X-UA-Compatible" content="ie=edge" />
+        <style>
+          p.small { line-height: 1.1;}
+          p.big {line-height: 1.8;}
+          .sansserif {
+            font-family: Arial, Helvetica, sans-serif;
+          }
+          h2 {
+            font-size: 25px;
+            font-family: sans-serif;
+            color:#adadad;
+            line-height: 1.25;
+            border: 2px solid #4f4f4f;
+            padding: 10px;
+          }
+          p {
+            color: #dbdbdb;
+            font-size: 17px;
+            font-family: sans-serif;  
+            line-height: .75;
+          }
+        </style>
+        <title>US COVID-19 INFO</title> 
+      </head>
+        <body style="background-color:#242424">
+          <div id="uscovid">
+          <h2>US CONFIRMED CASES: <span id = "usconfirmed" style="font-size:35px;color:#d6932f"></span><br>
+           US CONFIRMED DEATHS: <span id = "usdeaths" style="font-size:35px;color:#d6932f"></span></h2>
+           <p id="headertext"></p>          
+          </div>
+        <script>
+          (async () => {
+            let n = 1;
+            const urlFetch = ('https://geojsondataserver.firebaseapp.com/LocationArtistry/covid-us-totals/');
+            //const urlFetch = ('/LocationArtistry/covid-us-totals/');
+            const fetchData = await fetch(urlFetch);
+            const fetchJSON = await fetchData.json();
+            const totalsUS = fetchJSON["TOTALS"];
+            console.log(`US Totals: ${totalsUS.Confirmed} Deaths: ${totalsUS.Deaths}`);
+            
+            //function to sort US states by highest number of confirmed cases
+            const sortConfirmUS = () => {
+              let stateArray = [], stateArray2 = [], placeHolder = {}, x = 1, n = 1;
+              stateArray[0] = {"Country": "NONE", "Prov_State": "NONE", "Confirmed": 0, "Deaths": 0, "Recovered": 0, "Updated": ""};
+              for (record in fetchJSON) {
+                fetchJSON[record].Prov_State != "ALL" ? (stateArray[x] = fetchJSON[record],x++) : ("");
+              };
+              for (i=1;i<stateArray.length;i++){
+                for (z=1;z<stateArray.length;z++){
+                  if (stateArray[z].Confirmed < stateArray[z-1].Confirmed) {
+                    placeHolder = stateArray[z];
+                    stateArray[z] = stateArray[z-1];
+                    stateArray[z-1] = placeHolder;
+                    }
+                };
+              };
+            return stateArray;
+          };
+          
+          
+          //function to sort US cases by higest number of Deaths
+          const sortDeathsUS = () => {
+            let stateArray = [], stateArray2 = [], placeHolder = {}, x = 1, n = 1;
+            stateArray[0] = {"Country": "NONE", "Prov_State": "NONE", "Confirmed": 0, "Deaths": 0, "Recovered": 0, "Updated": ""};
+              for (record in fetchJSON) {
+                fetchJSON[record].Prov_State != "ALL" ? (stateArray[x] = fetchJSON[record],x++) : ("");
+              };
+              for (i=1;i<stateArray.length;i++){
+                for (z=1;z<stateArray.length;z++){
+                  if (stateArray[z].Deaths < stateArray[z-1].Deaths) {
+                    placeHolder = stateArray[z];
+                    stateArray[z] = stateArray[z-1];
+                    stateArray[z-1] = placeHolder;
+                    }
+                };
+              };
+            return stateArray;
+          };
+          pageDisplay = () => {
+            const confirmSorted = sortConfirmUS();
+            document.getElementById("headertext").innerText = "US States Highest Confirmed Cases:";
+            for (let y = (confirmSorted.length-1); y > 0;y--) {
+              const paraConfirm = document.createElement("P");
+              paraConfirm.innerText = `(${n}) ${confirmSorted[y].Prov_State} - Confirmed Cases: ${confirmSorted[y].Confirmed} - Deaths: ${confirmSorted[y].Deaths}`;
+              document.getElementById("uscovid").appendChild(paraConfirm);
+              console.log(`(${n}) State: ${confirmSorted[y].Prov_State} Confirmed: ${confirmSorted[y].Confirmed}`);
+              n++;
+            };
+            const deathsSorted = sortDeathsUS();
+            n = 1;
+            for (let y = (deathsSorted.length-1); y > (deathsSorted.length-11);y--) {
+              console.log(`${n}: State: ${deathsSorted[y].Prov_State} Deaths: ${deathsSorted[y].Deaths}`);
+              n++;
+            };
+            document.getElementById('usconfirmed').textContent = totalsUS.Confirmed;
+            document.getElementById('usdeaths').textContent = totalsUS.Deaths;
+          };
+      
+          pageDisplay();
+
+          })();
+
+        </script> 
+      </body>
+    </html> 

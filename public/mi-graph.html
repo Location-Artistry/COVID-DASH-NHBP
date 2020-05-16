@@ -1,0 +1,96 @@
+<head>
+	
+</head>
+
+<body style="background-color:#242424">
+    <script src="https://cdn.jsdelivr.net/npm/chart.js@2.9.3/dist/Chart.min.js"></script>
+<canvas id="myChart" width="700" height="600"></canvas>
+<script>
+(async () => {
+    Chart.defaults.global.legend.display = false;
+    let dailyArray = [], z=0, labelArray = [], fiveDayAcc = [], fiveDayAvg = [];
+    //const urlFetch = ('http://localhost:5000/LocationArtistry/mi-daily-report/');
+    const urlFetch = ('https://geojsondataserver.firebaseapp.com/LocationArtistry/mi-daily-report/');
+    const fetchData = await fetch(urlFetch);
+    const fetchJSON = await fetchData.json();
+    console.log(fetchJSON);
+    for(x in fetchJSON){
+        //daily cas counts
+        dailyArray[z] = fetchJSON[x].Daily_Cases;
+        labelArray[z] = x;
+        //5 day moving average
+        z > 0 ? (fiveDayAcc[z] = fiveDayAcc[z-1] + dailyArray[z]) : (fiveDayAcc[z] = dailyArray[z]);
+        z > 5 ? (fiveDayAcc[z] = fiveDayAcc[z] - dailyArray[z-5]) : '';
+        z > 5 ? (fiveDayAvg[z] = Math.round(fiveDayAcc[z]/5)) : (fiveDayAvg[z] = Math.round(fiveDayAcc[z]/(z+1)));  
+        console.log(`dailyArray[z] ${dailyArray[z]} labelArray[z] ${labelArray[z]} fiveDayAcc[z]: ${fiveDayAcc[z]} fiveDayAvg[z] ${fiveDayAvg[z]}`);
+        z++;
+    };
+    //console.log(labelArray);
+
+    var chartData = { 
+        labels: labelArray, 
+        datasets: [{
+            label: '5 Day Avg',
+            data: fiveDayAvg,
+            type: 'line',
+            //backgroundColor: 'rgba(250,163,47, .3)',
+            borderColor: 'rgba(99, 210, 166, .7)',
+            borderWidth: 4,
+            pointRadius: 0
+            }, {
+            label: 'Daily Cases',
+            data: dailyArray,
+            backgroundColor: 'rgba(250,163,47, .3)',
+            borderColor: 'rgba(229,157,36, 1)',
+            borderWidth: 1
+			}] 
+    };
+
+
+var ctx = document.getElementById('myChart').getContext('2d');
+var myChart = new Chart(ctx, {
+    type: 'bar',
+    data: chartData,
+    options: {
+        title: {
+          display: true,
+          text: "MICHIGAN DAILY NEW CASES " + labelArray[0].substr(0,5) + " through " + labelArray[labelArray.length-1].substr(0,5),
+          fontSize: 24,
+          fontColor: 'rgba(199, 199, 199,.8)'
+        },
+        tooltips: {
+                        displayColors: false,
+                        titleFontStyle: 'normal',
+                        position: 'nearest',
+						mode: 'index',
+						intersect: true,
+						yPadding: 10,
+						xPadding: 10,
+						caretSize: 10,
+                        //caretPadding: 20,
+						backgroundColor: 'rgba(0,0,0,.7)',
+						borderColor: 'rgba(194, 194, 194,1)',
+						borderWidth: 1,
+                        bodyFontSize: 18,
+                        titleFontSize: 15,
+                        titleFontColor: 'rgba(209, 154, 115,.8)',
+                        bodyFontColor: 'rgba(255, 106, 0,.8)',
+                        bodyAlign: 'center',
+                        bodyFontStyle: 'bold',
+        },
+        responsive: true,
+        scales: {
+            yAxes: [{
+                ticks: {
+                    beginAtZero: true,
+                    min: 0,
+                    max: 2000,
+                    stepSize: 250,
+                }
+            }]
+        },
+        
+    }
+});
+})();
+</script>
