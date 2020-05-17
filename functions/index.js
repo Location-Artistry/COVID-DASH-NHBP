@@ -1,14 +1,3 @@
-/*const firebaseConfig2 = {
-  apiKey: "AIzaSyCWDr2O7ymf6Nmox9T01xCCcTpMFYCnSqE",
-  authDomain: "geojsondataserver.firebaseapp.com",
-  databaseURL: "https://geojsondataserver.firebaseio.com",
-  projectId: "geojsondataserver",
-  storageBucket: "geojsondataserver.appspot.com",
-  messagingSenderId: "934922004560",
-  appId: "1:934922004560:web:50edbd45bc2a14056c4955",
-  measurementId: "G-KD7FQ8GX98"
-};*/
-
 require('dotenv').config();
 const firebaseConfig = {
   apiKey: process.env.apiKey,
