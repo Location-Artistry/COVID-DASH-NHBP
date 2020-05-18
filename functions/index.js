@@ -17,6 +17,7 @@ const admin = require('firebase-admin');
 //firebase.initializeApp(firebaseConfig);
 admin.initializeApp(firebaseConfig);
 
+const cheerio = require('cheerio');
 const puppeteer = require('puppeteer');
 const fetch = require('node-fetch');
 const express = require('express');
@@ -183,9 +184,7 @@ app.get("/LocationArtistry/mi-covid-combined/", async (req, res) => {
     const downloadedContents = await storage.bucket('gs://geojsondataserver.appspot.com').file('MI_COUNTIES_EK.json').download();
     const rawData = await downloadedContents[0].toString();
     const miCountyJSON = await JSON.parse(rawData);
-    //old Michigan endpoint for faulty GeoJSON format
-    //const miCountyFetch = await fetch('https://opendata.arcgis.com/datasets/67a8ff23b5f54f15b7133b8c30981441_0.geojson');
-    //const miCountyJSON = await miCountyFetch.json();
+  
     var objCollection = {}, dataObject = {"County": "", "Cases": 0, "Deaths": 0};
     //create objCollection with key value of County Name
     for (x in miCovJSON.features) {
@@ -277,6 +276,7 @@ app.get("/LocationArtistry/covid-us-totals/", async (req, res) => {
           .send('ERROR MESSAGE bad GeoJSON mate!');
       }
   })
+
 
 //Endpoint that returns an object of daily objects, each day contains daily and total cases and dths
   app.get('/LocationArtistry/mi-daily-report/', async (req, res) => {
@@ -419,5 +419,51 @@ app.get('/LocationArtistry/daily-CHSDA-report/', async (req, res) => {
        .send('ERROR MESSAGE bad GeoJSON mate!');
    }
 })
+
+//New endpoint to scrape Michigan Demographics data per county
+app.get("/LocationArtistry/mi-demo-data/", async (req, res) => {
+  const scrapeDemo = async (url) => {
+      async function requests(url) {
+      const res = await fetch(url);
+      const html = await res.text();
+      const $ = cheerio.load(html);
+      let x = 3, countyArray = [], nextCounty = 1;
+      while(nextCounty != "") {
+          const countyName = ($(`table > tbody > tr:nth-child(${x}) > td.leftAligned`).text()).trim();
+          const countyTotalPop = ($(`table > tbody > tr:nth-child(${x}) > td:nth-child(2)`).text()).trim();
+          const countyPopOver65 = ($(`table > tbody > tr:nth-child(${x}) > td:nth-child(3)`).text()).trim();
+          const countyPop65per = ($(`table > tbody > tr:nth-child(${x}) > td:nth-child(4)`).text()).trim();
+          nextCounty = ($(`table > tbody > tr:nth-child(${x+1}) > td:nth-child(4)`).text()).trim();
+          //body > div > center > table > tbody > tr:nth-child(86) > td:nth-child(4)
+          //const testExp = nextCounty == "" ? 'blank' : 'non-blank';
+          const countyObject = {'countyName': countyName, 'countyTotalPop': countyTotalPop, 'countyPopOver65': countyPopOver65, 'countyPop65per': countyPop65per };
+          console.log(countyObject);
+          console.log(`nextCounty: "${nextCounty}"`);
+          countyArray[x-3] = countyObject;
+          //console.log(`nextCounty: ${nextCounty} textExp: ${testExp}`);
+          x++;
+      }
+      console.log('at 1st return');
+      return countyArray;
+  };
+  console.log('before request2');
+  const request2 = await requests(url);
+  console.log('beore return');
+  return request2;
+}
+
+try {
+      console.log('start of TRY');
+      //const body = JSON.parse(request.body);
+      const data = await scrapeDemo('https://www.mdch.state.mi.us/pha/osr/CHI/POP/MAIN/PO17CO1.htm');
+      res.send(data);
+}
+catch (err) {
+  console.error("SOM Demographics Scrape Fail");
+  res
+  .status(400)
+  .send('ERROR MESSAGE bad SCRAPE AMTE!');
+}
+});
 
 exports.api = functions.runWith({ memory: '2GB' }).https.onRequest(app);

@@ -29,6 +29,9 @@
         }, {
           "source":"/LocationArtistry/daily-CHSDA-report/**",
           "function": "api"
+        }, {
+          "source": "/LocationArtistry/mi-demo-data/**",
+          "function": "api"
         }
     ]
   }
