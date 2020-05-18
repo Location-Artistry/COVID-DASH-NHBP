@@ -278,17 +278,16 @@ app.get("/LocationArtistry/covid-us-totals/", async (req, res) => {
       }
   })
 
+//Endpoint that returns an object of daily objects, each day contains daily and total cases and dths
   app.get('/LocationArtistry/mi-daily-report/', async (req, res) => {
-       //Empty global object to use as database to store US State level data 
-       let stateDataMI = {}, stateDataObj = {}, topTenStates = [], dailyCases=0, dailyDeaths=0, dailyRecov=0;
-       //new async function to loop through date range starting March 22nd to get daily series for Michigan
+      //Empty global object to use as database to store MI daily Covid Data
+       let stateDataMI = {}, dailyCases=0, dailyDeaths=0, dailyRecov=0;
+      //async function to build url date starting with March 22nd to dynamically create CSV url an fecth data
        const runDates = async () =>{
           const monLength = {"1":31,"2":28,"3":31,"4":30,"5":31,"6":30,"7":31,"8":31,"9":30,"10":31,"11":30,"12":31};
           let month = 3, day = 22, year = 2020, MIDataJSON;
-          //Loop through dates to create dynamic url for each day
-          //stop when date reaches yesterday, if first day in month then rollback to last day in previous month
+          //Stop when date reaches yesterday, if first day in month then rollback to last day in previous month
           for(isYesterday = false;isYesterday == false;day++){
-            //for(x=0;x<50;x++){
             day > monLength[month] ? (month = month + 1, day = 1) : ("");
             monthString = month.toString();
             month < 10 ? (monthString = "0" + monthString) : "";
@@ -299,17 +298,16 @@ app.get("/LocationArtistry/covid-us-totals/", async (req, res) => {
             let monthNum = (today.getMonth() + 1), dayNum = ((today.getDate())-1), yearNum = today.getFullYear();
             dayNum == 0 ? (dayNum = monLength[month], monthNum = monthNum-1) : "";
             month == monthNum ? (isYesterday = day == dayNum ? true : false) : "";
-            console.log(`monLength[month]: ${monLength[month]} month: ${month} monthNum: ${monthNum} day: ${day} dayNum: ${dayNum}`);
+            //console.log(`monLength[month]: ${monLength[month]} month: ${month} monthNum: ${monthNum} day: ${day} dayNum: ${dayNum}`);
             const urlFetch = `https://raw.githubusercontent.com/CSSEGISandData/COVID-19/master/csse_covid_19_data/csse_covid_19_daily_reports/${urlDate}.csv`;
             const fetchMI = await fetch(urlFetch);
-            console.log(`Fecthing from: ${urlFetch}`);
+            //console.log(`Fecthing from: ${urlFetch}`);
             const fetchMIJSON = await fetchMI.text();
             let stringLines = fetchMIJSON.split("\n"), MIData = [];
             eachLine = (item, index) => (MIData[index] = item.split(","));
             stringLines.forEach(eachLine);
             MIDataJSON = await buildFeatures(MIData, urlDate);
           }
-        
           for(z in MIDataJSON){
             //hard code in the cases for 03-22, the day JHU Github repo begins reporting Michigan by County
             dailyCases == 0 ? (MIDataJSON[z].Daily_Cases = 247) : (MIDataJSON[z].Daily_Cases = (MIDataJSON[z].Confirmed - dailyCases));
@@ -319,7 +317,6 @@ app.get("/LocationArtistry/covid-us-totals/", async (req, res) => {
             dailyRecov == 0 ? (MIDataJSON[z].Daily_Recovered = 0) : (MIDataJSON[z].Daily_Recovered = (MIDataJSON[z].Recovered - dailyRecov));
             dailyRecov = MIDataJSON[z].Recovered;
           }
-      
           return MIDataJSON;
         }
        //Take parsed CSV data and create each GeoJSON feature, add to GeoJSON object corvidGeoJSON
@@ -327,16 +324,16 @@ app.get("/LocationArtistry/covid-us-totals/", async (req, res) => {
          stateDataMI[dateRecord] = {"Country": "US", "Prov_State": "Michigan", "Confirmed": 0, "Deaths": 0, "Recovered": 0, "Updated": "",
                                     "Daily_Cases": 0, "Daily_Deaths": 0, "Daily_Recovered": 0};
          eachRecord = (item, index) => {
-           item[2] == "Michigan" ? (stateDataMI[dateRecord].Confirmed = stateDataMI[dateRecord].Confirmed + Number(item[7]),
-                                  stateDataMI[dateRecord].Deaths = stateDataMI[dateRecord].Deaths + Number(item[8]),
-                                  stateDataMI[dateRecord].Recovered = stateDataMI[dateRecord].Recovered + Number(item[9])):"";
+            item[2] == "Michigan" ? (stateDataMI[dateRecord].Confirmed = stateDataMI[dateRecord].Confirmed + Number(item[7]),
+            stateDataMI[dateRecord].Deaths = stateDataMI[dateRecord].Deaths + Number(item[8]),
+            stateDataMI[dateRecord].Recovered = stateDataMI[dateRecord].Recovered + Number(item[9])):"";
          };
          featuresData.forEach(eachRecord);
          return stateDataMI
        };
+
        try {
            const MIParsed = await runDates();
-           //const stateDataJSON = await buildFeatures(covidParsed);
            res
            .status(200)
            .send(MIParsed);
@@ -349,5 +346,78 @@ app.get("/LocationArtistry/covid-us-totals/", async (req, res) => {
        }
    })
 
+//Endpoint that returns an object of daily CSHDA area objects, each day contains daily and total cases and dths
+app.get('/LocationArtistry/daily-CHSDA-report/', async (req, res) => {
+  //Empty global object to use as database to store MI daily Covid Data
+   let stateDataMI = {}, dailyCases=0, dailyDeaths=0, dailyRecov=0;
+  //async function to build url date starting with March 22nd to dynamically create CSV url an fecth data
+   const runDates = async () =>{
+      const monLength = {"1":31,"2":28,"3":31,"4":30,"5":31,"6":30,"7":31,"8":31,"9":30,"10":31,"11":30,"12":31};
+      let month = 3, day = 22, year = 2020, MIDataJSON;
+      //Stop when date reaches yesterday, if first day in month then rollback to last day in previous month
+      for(isYesterday = false;isYesterday == false;day++){
+        day > monLength[month] ? (month = month + 1, day = 1) : ("");
+        monthString = month.toString();
+        month < 10 ? (monthString = "0" + monthString) : "";
+        dayString = day.toString();
+        day < 10 ? (dayString = "0" + dayString) : "";
+        const urlDate = `${monthString}-${dayString}-${year}`;
+        const today = new Date();
+        let monthNum = (today.getMonth() + 1), dayNum = ((today.getDate())-1), yearNum = today.getFullYear();
+        dayNum == 0 ? (dayNum = monLength[month], monthNum = monthNum-1) : "";
+        month == monthNum ? (isYesterday = day == dayNum ? true : false) : "";
+        //console.log(`monLength[month]: ${monLength[month]} month: ${month} monthNum: ${monthNum} day: ${day} dayNum: ${dayNum}`);
+        const urlFetch = `https://raw.githubusercontent.com/CSSEGISandData/COVID-19/master/csse_covid_19_data/csse_covid_19_daily_reports/${urlDate}.csv`;
+        const fetchMI = await fetch(urlFetch);
+        //console.log(`Fecthing from: ${urlFetch}`);
+        const fetchMIJSON = await fetchMI.text();
+        let stringLines = fetchMIJSON.split("\n"), MIData = [];
+        eachLine = (item, index) => (MIData[index] = item.split(","));
+        stringLines.forEach(eachLine);
+        //console.log(MIData);
+        MIDataJSON = await buildFeatures(MIData, urlDate);
+        //console.log(MIDataJSON);
+      }
+      for(z in MIDataJSON){
+        //hard code in the cases for 03-22, the day JHU Github repo begins reporting Michigan by County
+        dailyCases == 0 ? (MIDataJSON[z].Daily_Cases = 32) : (MIDataJSON[z].Daily_Cases = (MIDataJSON[z].Confirmed - dailyCases));
+        dailyCases = MIDataJSON[z].Confirmed;
+        dailyDeaths == 0 ? (MIDataJSON[z].Daily_Deaths = 0) : (MIDataJSON[z].Daily_Deaths = (MIDataJSON[z].Deaths - dailyDeaths));
+        dailyDeaths = MIDataJSON[z].Deaths;
+        dailyRecov == 0 ? (MIDataJSON[z].Daily_Recovered = 0) : (MIDataJSON[z].Daily_Recovered = (MIDataJSON[z].Recovered - dailyRecov));
+        dailyRecov = MIDataJSON[z].Recovered;
+      }
+      return MIDataJSON;
+    }
+   //Take parsed CSV data and create each GeoJSON feature, add to GeoJSON object corvidGeoJSON
+   const buildFeatures = async (featuresData, dateRecord) => {
+     stateDataMI[dateRecord] = {"Country": "US", "Prov_State": "NHBP_CHSDA", "Confirmed": 0, "Deaths": 0, "Recovered": 0, "Updated": "",
+                                "Daily_Cases": 0, "Daily_Deaths": 0, "Daily_Recovered": 0};
+     eachRecord = (item, index) => {
+        //(item[1]=="Calhoun"||item[1]=="Kalamazoo"||item[1]=="Branch"||item[1]=="Allegan"||item[1]=="Kent"||item[1]=="Barry"||item[1]=="Ottawa"
+        //Calhoun=2Kal=0,Branch=0,Allegan=1,Kent=22,Barry=1,Ottawa=6
+        item[2] == "Michigan" ? (item[1]=="Calhoun"||item[1]=="Kalamazoo"||item[1]=="Branch"||item[1]=="Allegan"||item[1]=="Kent"||item[1]=="Barry"||item[1]=="Ottawa"
+        ? ((stateDataMI[dateRecord].Confirmed = stateDataMI[dateRecord].Confirmed + Number(item[7]),
+        stateDataMI[dateRecord].Deaths = stateDataMI[dateRecord].Deaths + Number(item[8]),
+        stateDataMI[dateRecord].Recovered = stateDataMI[dateRecord].Recovered + Number(item[9]))):""):"";
+      };
+     featuresData.forEach(eachRecord);
+     console.log(stateDataMI);
+     return stateDataMI
+   };
+
+   try {
+       const MIParsed = await runDates();
+       res
+       .status(200)
+       .send(MIParsed);
+   }
+   catch (err) {
+       console.error("Your GeoJSON fetch is went WRONG!");
+       res
+       .status(400)
+       .send('ERROR MESSAGE bad GeoJSON mate!');
+   }
+})
 
 exports.api = functions.runWith({ memory: '2GB' }).https.onRequest(app);

@@ -26,6 +26,9 @@
       }, {
           "source":"/LocationArtistry/testCloud/**",
           "function": "api"
+        }, {
+          "source":"/LocationArtistry/daily-CHSDA-report/**",
+          "function": "api"
         }
     ]
   }
