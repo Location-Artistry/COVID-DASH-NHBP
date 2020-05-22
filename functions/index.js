@@ -171,8 +171,9 @@ async function scrapeSite(url, targetID) {
   }  
 })
 
-//new endpoint to take Michigan GeoJSON and combine data with MI Covid Scraper data
+//endpoint to take Michigan GeoJSON and combine data with MI Covid Scraper data
 //Encountered problem with format of Michigan GeoJSON, 5/1, saved county GeoJSON on GCP storage, then pull that to combine
+//Added Michigan demographics from Cheerio scraper 5/19! Wanted to do that forever!
 app.get("/LocationArtistry/mi-covid-combined/", async (req, res) => {
   try {
     //const miCovFetch = await fetch('http://localhost:5000/LocationArtistry/mi-covid-data/');
@@ -184,28 +185,51 @@ app.get("/LocationArtistry/mi-covid-combined/", async (req, res) => {
     const downloadedContents = await storage.bucket('gs://geojsondataserver.appspot.com').file('MI_COUNTIES_EK.json').download();
     const rawData = await downloadedContents[0].toString();
     const miCountyJSON = await JSON.parse(rawData);
-  
-    var objCollection = {}, dataObject = {"County": "", "Cases": 0, "Deaths": 0};
+    const miDemoFetch = await fetch('https://geojsondataserver.firebaseapp.com/LocationArtistry/mi-demo-data/');
+    //const miDemoFetch = await fetch('http://localhost:5000/LocationArtistry/mi-demo-data/');
+    const miDemoJSON = await miDemoFetch.json();
+    //console.log(miDemoJSON);
+    var objCollection = {}, objCollection2 = {}, dataObject = {"County": "", "Cases": 0, "Deaths": 0}, 
+    dataObject2 = {"countyName": "", "countyTotalPop": 0, "countyPopOver65": 0, "countyPop65per": 0};
     //create objCollection with key value of County Name
     for (x in miCovJSON.features) {
       const {County, Cases, Deaths} = miCovJSON.features[x].properties;
       dataObject = {"County": County, "Cases": Cases, "Deaths": Deaths};
       objCollection[County] = dataObject;
+      //console.log(objCollection[County]);
     };
+    //loop duplicate for miDemoJSON
+    
+    for (x in miDemoJSON) {
+      const {countyName, countyTotalPop, countyPopOver65, countyPop65per} = miDemoJSON[x];
+      dataObject2 = {"countyName": countyName, "countyTotalPop": countyTotalPop, "countyPopOver65": countyPopOver65, "countyPop65per": countyPop65per};
+      objCollection2[countyName] = dataObject2;
+      //console.log(miDemoJSON[x]);
+      //console.log(dataObject2);
+      //console.log(objCollection2[countyName]);
+    };
+    //console.log(objCollection2);
+
     //match up county GeoJSON from SOM with Covid data from SOM data fetch
     //Whew!  This took some time to remove ERROR from calling non-existent Object Property - March 31st 2020
     for (x in miCountyJSON.features) {
       const nameKey = (miCountyJSON.features[x].properties.NAME in objCollection), countyName = miCountyJSON.features[x].properties.NAME;
       miCountyJSON.features[x].properties.Confirmed = nameKey == true ? objCollection[countyName].Cases : 0;
       miCountyJSON.features[x].properties.Deaths = nameKey == true ? objCollection[countyName].Deaths : 0;
+      const nameKey2 = (miCountyJSON.features[x].properties.NAME in objCollection2), countyName2 = miCountyJSON.features[x].properties.NAME;
+      miCountyJSON.features[x].properties.countyTotalPop = nameKey2 == true ? objCollection2[countyName2].countyTotalPop : 0;
+      miCountyJSON.features[x].properties.countyPopOver65 = nameKey2 == true ? objCollection2[countyName2].countyPopOver65 : 0;
+      miCountyJSON.features[x].properties.countyPop65per = nameKey2 == true ? objCollection2[countyName2].countyPop65per : 0;
+      miCountyJSON.features[x].properties.Confirmed != 0 ? (miCountyJSON.features[x].properties.countyCaseRatio = 
+      Math.round(miCountyJSON.features[x].properties.countyTotalPop/miCountyJSON.features[x].properties.Confirmed)):
+      (miCountyJSON.features[x].properties.countyCaseRatio=0);
+      //console.log(`countyName2: ${countyName2} ${miCountyJSON.features[x].properties.countyCaseRatio}`);
       delete miCountyJSON.features[x].properties['Shape.STArea()'];
       delete miCountyJSON.features[x].properties['Shape.STLength()'];
-      //console.log(miCountyJSON.features[x].properties);
       //This portion is being implementation when Michigan data is scraped
       //If CountyName = Wayne THEN add Detroit City Cases and Deaths
-      //miCountyJSON.features[x].properties.Confirmed = countyName == "Wayne" ? miCountyJSON.features[x].properties.Confirmed + objCollection["Detroit City"].Cases : miCountyJSON.features[x].properties.Confirmed;
-      //miCountyJSON.features[x].properties.Deaths = countyName == "Wayne" ? miCountyJSON.features[x].properties.Deaths + objCollection["Detroit City"].Deaths : miCountyJSON.features[x].properties.Deaths;
     }
+
     res
       .status(200)
       .json(await miCountyJSON);
@@ -276,7 +300,6 @@ app.get("/LocationArtistry/covid-us-totals/", async (req, res) => {
           .send('ERROR MESSAGE bad GeoJSON mate!');
       }
   })
-
 
 //Endpoint that returns an object of daily objects, each day contains daily and total cases and dths
   app.get('/LocationArtistry/mi-daily-report/', async (req, res) => {
@@ -366,17 +389,13 @@ app.get('/LocationArtistry/daily-CHSDA-report/', async (req, res) => {
         let monthNum = (today.getMonth() + 1), dayNum = ((today.getDate())-1), yearNum = today.getFullYear();
         dayNum == 0 ? (dayNum = monLength[month], monthNum = monthNum-1) : "";
         month == monthNum ? (isYesterday = day == dayNum ? true : false) : "";
-        //console.log(`monLength[month]: ${monLength[month]} month: ${month} monthNum: ${monthNum} day: ${day} dayNum: ${dayNum}`);
         const urlFetch = `https://raw.githubusercontent.com/CSSEGISandData/COVID-19/master/csse_covid_19_data/csse_covid_19_daily_reports/${urlDate}.csv`;
         const fetchMI = await fetch(urlFetch);
-        //console.log(`Fecthing from: ${urlFetch}`);
         const fetchMIJSON = await fetchMI.text();
         let stringLines = fetchMIJSON.split("\n"), MIData = [];
         eachLine = (item, index) => (MIData[index] = item.split(","));
         stringLines.forEach(eachLine);
-        //console.log(MIData);
         MIDataJSON = await buildFeatures(MIData, urlDate);
-        //console.log(MIDataJSON);
       }
       for(z in MIDataJSON){
         //hard code in the cases for 03-22, the day JHU Github repo begins reporting Michigan by County
@@ -430,30 +449,21 @@ app.get("/LocationArtistry/mi-demo-data/", async (req, res) => {
       let x = 3, countyArray = [], nextCounty = 1;
       while(nextCounty != "") {
           const countyName = ($(`table > tbody > tr:nth-child(${x}) > td.leftAligned`).text()).trim();
-          const countyTotalPop = ($(`table > tbody > tr:nth-child(${x}) > td:nth-child(2)`).text()).trim();
-          const countyPopOver65 = ($(`table > tbody > tr:nth-child(${x}) > td:nth-child(3)`).text()).trim();
+          const countyTotalPop = (($(`table > tbody > tr:nth-child(${x}) > td:nth-child(2)`).text()).trim()).replace(/,/g,"");
+          const countyPopOver65 = (($(`table > tbody > tr:nth-child(${x}) > td:nth-child(3)`).text()).trim()).replace(/,/g,"")
           const countyPop65per = ($(`table > tbody > tr:nth-child(${x}) > td:nth-child(4)`).text()).trim();
           nextCounty = ($(`table > tbody > tr:nth-child(${x+1}) > td:nth-child(4)`).text()).trim();
-          //body > div > center > table > tbody > tr:nth-child(86) > td:nth-child(4)
-          //const testExp = nextCounty == "" ? 'blank' : 'non-blank';
-          const countyObject = {'countyName': countyName, 'countyTotalPop': countyTotalPop, 'countyPopOver65': countyPopOver65, 'countyPop65per': countyPop65per };
-          console.log(countyObject);
-          console.log(`nextCounty: "${nextCounty}"`);
+          const countyObject = {'countyName': countyName, 'countyTotalPop': Number(countyTotalPop), 'countyPopOver65': Number(countyPopOver65), 'countyPop65per': countyPop65per };
           countyArray[x-3] = countyObject;
-          //console.log(`nextCounty: ${nextCounty} textExp: ${testExp}`);
           x++;
       }
-      console.log('at 1st return');
       return countyArray;
   };
-  console.log('before request2');
+  //console.log('before request2');
   const request2 = await requests(url);
-  console.log('beore return');
   return request2;
 }
-
 try {
-      console.log('start of TRY');
       //const body = JSON.parse(request.body);
       const data = await scrapeDemo('https://www.mdch.state.mi.us/pha/osr/CHI/POP/MAIN/PO17CO1.htm');
       res.send(data);
