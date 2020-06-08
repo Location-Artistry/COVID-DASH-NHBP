@@ -10,7 +10,6 @@
       {
         "source": "/LocationArtistry/CovidGeoJSON/**",
         "function": "api"
-
       }, {
         "source": "/LocationArtistry/mi-covid-data/**",
         "function": "api"
@@ -31,6 +30,9 @@
           "function": "api"
         }, {
           "source": "/LocationArtistry/mi-demo-data/**",
+          "function": "api"
+        }, {
+          "source": "/LocationArtistry/mi-totals-data/**",
           "function": "api"
         }
     ]

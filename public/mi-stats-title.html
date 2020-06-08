@@ -16,7 +16,7 @@
             font-family: sans-serif;
             color:#a8cdce;
             line-height: 1;
-            border: 4px solid #00252b;
+            border: 5px solid #013a42;
             padding: 5px;
             text-align: center;
             margin-bottom: 1px;
@@ -42,22 +42,22 @@
       </head>
         <body style="background-color:#242424">
           <div id="micovid">
-            <h3>MICHIGAN CONFIRMED CASES: <span id = "miconfirmed" style="font-size:25px;color:#00dada"></span>
-            MICHIGAN CONFIRMED DEATHS: <span id = "mideaths" style="font-size:25px;color:#00cccc"></span></h3>
-            
-            <p id="headertext">TOTAL CONFIRMED COVID CASES by COUNTY<br>
-                <span style="font-size:15px"> Cases not normalized by County population</span></p>       
+            <h3>MICHIGAN CONFIRMED CASES: <span id = "miconfirmed" style="font-size:25px;color:#00dada"></span><br>
+            MICHIGAN CONFIRMED DEATHS: <span id = "mideaths" style="font-size:25px;color:#00cccc"></span><br>
+            MICHIGAN RECOVERED: <span id = "mirecovered" style="font-size:30px;color:#00cca0"></span></h3>      
           </div>
         <script>
           (async () => {
             let n = 1;
-            const urlFetch = ('https://geojsondataserver.firebaseapp.com/LocationArtistry/mi-covid-data/');
+            //local vs web endpoint for testing
+            const urlFetch = ('https://geojsondataserver.firebaseapp.com/LocationArtistry/mi-totals-data/');
+            //const urlFetch = ('http://localhost:5000/LocationArtistry/mi-totals-data/');
             const fetchData = await fetch(urlFetch);
             const fetchJSON = await fetchData.json();
-            const totalsMI = fetchJSON.features[fetchJSON.features.length - 1].properties;
-            document.getElementById('miconfirmed').textContent = totalsMI.TotalCases;
-            document.getElementById('mideaths').textContent = totalsMI.TotalDeaths;
-
+           
+            document.getElementById('miconfirmed').textContent = fetchJSON[fetchJSON.length - 1].Cases;
+            document.getElementById('mideaths').textContent = fetchJSON[fetchJSON.length - 1].Deaths;
+            document.getElementById('mirecovered').textContent = fetchJSON[fetchJSON.length - 1].RecovTotal;
           })();
 
         </script> 

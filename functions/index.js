@@ -476,4 +476,51 @@ catch (err) {
 }
 });
 
+//New endpoint to scrape Michigan Totals info with Cheerio
+app.get("/LocationArtistry/mi-totals-data/", async (req, res) => {
+  // Mi pop site body > div > center > table > tbody > tr:nth-child(3) > td.leftAligned
+  // #main > div.row.row-eq-height.content-block-section > div.page-content-block > div:nth-child(1) > div:nth-child(1) > div > table > tbody > tr:nth-child(1) > td:nth-child(1)
+  // #main > div.row.row-eq-height.content-block-section > div.page-content-block > div:nth-child(1) > div:nth-child(1) > 
+  // div > table > tbody > tr:nth-child(1) > td:nth-child(3)
+  const scrapeDemo = async (url) => {
+      console.log(url);
+      async function requests(url) {
+      const res = await fetch(url);
+      const html = await res.text();
+      const $ = cheerio.load(html);
+      let x = 1, countyArray = [], nextCounty = 1;
+      while(nextCounty != "") {
+          const countyName = ($(`div:nth-child(1) > div:nth-child(1) > div > table > tbody > tr:nth-child(${x}) > td:nth-child(1)`).text()).trim();
+          const countyCases = ($(`div:nth-child(1) > div:nth-child(1) > div > table > tbody > tr:nth-child(${x}) > td:nth-child(2)`).text()).trim();
+          const countyDeaths = ($(`div:nth-child(1) > div:nth-child(1) > div > table > tbody > tr:nth-child(${x}) > td:nth-child(3)`).text()).trim();
+          const totalRecover = (($('span.shortdesc > p:nth-child(2) > strong > span > span').text()).trim()).replace(/,/g,"");
+          console.log(totalRecover);
+          //const countyPop65per = ($(`table > tbody > tr:nth-child(${x}) > td:nth-child(4)`).text()).trim();
+          // #comp_115181 > ul > li:nth-child(2) > span > span > span.shortdesc > p:nth-child(2) > strong > span
+          // #comp_115181 > ul > li:nth-child(2) > span > span > span.shortdesc > p:nth-child(2) > strong > span > span
+          // #comp_115181 > ul > li:nth-child(2) > span > span > span.shortdesc > p:nth-child(2)
+          nextCounty = ($(`table > tbody > tr:nth-child(${x+1}) > td:nth-child(1)`).text()).trim();
+          const countyObject = {'County': countyName, 'Cases': Number(countyCases), 'Deaths': Number(countyDeaths), 'RecovTotal': Number(totalRecover)};
+          countyArray[x-1] = countyObject;
+          x++;
+      }  
+      return countyArray;
+  };
+  //console.log('before request2');
+  const request2 = await requests(url);
+  return request2;
+}
+try {
+      //const body = JSON.parse(request.body);
+      const data = await scrapeDemo('https://www.michigan.gov/coronavirus/0,9753,7-406-98163_98173---,00.html');
+      res.send(data);
+}
+catch (err) {
+  console.error("SOM Demographics Scrape Fail");
+  res
+  .status(400)
+  .send('ERROR MESSAGE bad SCRAPE AMTE!');
+}
+});
+
 exports.api = functions.runWith({ memory: '2GB' }).https.onRequest(app);

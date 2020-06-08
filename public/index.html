@@ -81,8 +81,9 @@
         "esri/layers/TileLayer",
         "esri/widgets/Legend"
       ], function(Map, GeoJSONLayer, MapView, TileLayer, Legend) {
-        const worldDataUrl = "/LocationArtistry/CovidGeoJSON/";
-        const miCountyUrl = "https://opendata.arcgis.com/datasets/67a8ff23b5f54f15b7133b8c30981441_0.geojson";
+        //const worldDataUrl = "https://geojsondataserver.firebaseapp.com/LocationArtistry/CovidGeoJSON/";
+        const worldDataUrl = "http://localhost:5000/LocationArtistry/CovidGeoJSON/";
+        //const miCountyUrl = "https://opendata.arcgis.com/datasets/67a8ff23b5f54f15b7133b8c30981441_0.geojson";
         const template = {
           title: "COUNTRY: {Country}",
           "content": [{
